@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Raw CSV cache - regenerated on each fetch, ~40MB of noise
+data/raw/
+
+# Logs
+*.log
+
+# Local-only helper / smoke / exploration scripts
+smoke_*.py
+explore_*.py
+check_groups.py
+sanity_audit.py
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Streamlit secrets (never commit)
+.streamlit/secrets.toml

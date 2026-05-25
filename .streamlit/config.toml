@@ -1,0 +1,11 @@
+[theme]
+base = "dark"
+primaryColor = "#2e8b57"
+
+[server]
+maxUploadSize = 50
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
