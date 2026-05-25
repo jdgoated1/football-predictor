@@ -14,6 +14,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from src.club_logos import logo as club_logo, has_logos
 from src.flags import flagged
 from src.predictor import PredictorBundle
 from src.real_groups import REAL_GROUPS, resolve_groups
@@ -396,7 +397,23 @@ def render_match():
     home_disp = fmt_team(home)
     away_disp = fmt_team(away)
 
-    st.markdown(f"### {home_disp}  vs  {away_disp}")
+    # Show club crests for leagues scope when logos are available
+    if scope == "leagues" and has_logos():
+        crest_cols = st.columns([1, 4, 1])
+        h_logo = club_logo(home)
+        a_logo = club_logo(away)
+        with crest_cols[0]:
+            if h_logo:
+                st.image(h_logo, width=80)
+        with crest_cols[1]:
+            st.markdown(f"<h3 style='text-align:center;margin-top:1.5rem'>"
+                        f"{home_disp}  vs  {away_disp}</h3>",
+                        unsafe_allow_html=True)
+        with crest_cols[2]:
+            if a_logo:
+                st.image(a_logo, width=80)
+    else:
+        st.markdown(f"### {home_disp}  vs  {away_disp}")
     hg, ag = pred["most_likely"]
 
     k1, k2, k3, k4, k5 = st.columns(5)
@@ -482,15 +499,26 @@ def render_league():
     else:
         st.caption(f"{len(state.teams)} teams. Simulating a full {len(state.teams)*(len(state.teams)-1)} match season from scratch.")
 
+    use_logos = has_logos()
+
     if continue_season:
         # Show the current table
         with st.expander("Current standings (real)", expanded=False):
-            cur = pd.DataFrame([{
-                "Team": t, "Pts": state.pts[t], "GF": state.gf[t], "GA": state.ga[t],
-                "GD": state.gf[t] - state.ga[t],
-            } for t in state.teams]).sort_values(["Pts", "GD", "GF"], ascending=False).reset_index(drop=True)
-            cur.index += 1
-            st.dataframe(cur, use_container_width=True)
+            cur_rows = []
+            for t in sorted(state.teams,
+                             key=lambda x: (-state.pts[x],
+                                            -(state.gf[x] - state.ga[x]),
+                                            -state.gf[x])):
+                row = {}
+                if use_logos:
+                    row[" "] = club_logo(t) or ""
+                row.update({"Team": t, "Pts": state.pts[t], "GF": state.gf[t],
+                            "GA": state.ga[t], "GD": state.gf[t] - state.ga[t]})
+                cur_rows.append(row)
+            cur = pd.DataFrame(cur_rows)
+            cur.index = range(1, len(cur) + 1)
+            cfg = {" ": st.column_config.ImageColumn("", width="small")} if use_logos else None
+            st.dataframe(cur, use_container_width=True, column_config=cfg)
 
     if st.button("Run season simulation", key="l_run", type="primary"):
         with st.spinner(f"Running {n_sims:,} simulations..."):
@@ -498,13 +526,16 @@ def render_league():
                                      start=state if continue_season else None)
         st.success(f"Done - {n_sims:,} seasons simulated.")
         st.subheader("Predicted final table")
-        # Pretty formatting
         styled = result.copy()
         for col in ["Win %", "Top 4 %", "Top 6 %", "Bottom 3 %"]:
             styled[col] = styled[col].map(lambda v: f"{v:.1f}%")
         styled["Expected pts"] = styled["Expected pts"].map(lambda v: f"{v:.1f}")
         styled["Expected pos"] = styled["Expected pos"].map(lambda v: f"{v:.1f}")
-        st.dataframe(styled, use_container_width=True, hide_index=True)
+        if use_logos:
+            styled.insert(0, " ", styled["Team"].map(lambda t: club_logo(t) or ""))
+        cfg = {" ": st.column_config.ImageColumn("", width="small")} if use_logos else None
+        st.dataframe(styled, use_container_width=True, hide_index=True,
+                     column_config=cfg)
 
         cA, cB = st.columns(2)
         with cA:
