@@ -245,7 +245,7 @@ _HERO_HTML = """
   <div class="hero-content">
     <h1>Football Predictor</h1>
     <p class="hero-subtitle">
-      AI-powered match and tournament predictions across the top-5 European
+      Statistical match and tournament predictions across the top-5 European
       leagues and every international team — built on a stacked Elo +
       Dixon-Coles + gradient-boosted ensemble. Tournament mode covers the
       <strong style="color:#fbbf24">2026 FIFA World Cup</strong> with the
