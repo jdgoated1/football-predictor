@@ -273,3 +273,111 @@ def flagged(team: str, prefix: bool = True) -> str:
     if not f:
         return team
     return f"{f} {team}" if prefix else f"{team} {f}"
+
+
+# ISO 3166-1 alpha-2 codes (lowercase) - used to fetch flag images from flagcdn.com.
+# Covers every team in the bundle that has a Unicode flag emoji above. Streamlit
+# Cloud's Linux fonts don't render regional-indicator flag emoji reliably, so we
+# embed real flag images instead inside HTML-rendered widgets.
+ISO_ALPHA2: dict[str, str] = {
+    # WC 2026
+    "Mexico": "mx", "South Korea": "kr", "South Africa": "za", "Czech Republic": "cz",
+    "Canada": "ca", "Switzerland": "ch", "Qatar": "qa", "Bosnia and Herzegovina": "ba",
+    "Brazil": "br", "Morocco": "ma", "Haiti": "ht", "United States": "us",
+    "Paraguay": "py", "Australia": "au", "Turkey": "tr", "Germany": "de",
+    "Ecuador": "ec", "Ivory Coast": "ci", "Curaçao": "cw", "Netherlands": "nl",
+    "Japan": "jp", "Tunisia": "tn", "Sweden": "se", "Belgium": "be",
+    "Iran": "ir", "Egypt": "eg", "New Zealand": "nz", "Spain": "es",
+    "Uruguay": "uy", "Saudi Arabia": "sa", "Cape Verde": "cv", "France": "fr",
+    "Senegal": "sn", "Norway": "no", "Iraq": "iq", "Argentina": "ar",
+    "Austria": "at", "Algeria": "dz", "Jordan": "jo", "Portugal": "pt",
+    "Colombia": "co", "Uzbekistan": "uz", "DR Congo": "cd", "Croatia": "hr",
+    "Panama": "pa", "Ghana": "gh",
+    # Other internationals
+    "Italy": "it", "Ireland": "ie", "Russia": "ru", "Poland": "pl",
+    "Ukraine": "ua", "Romania": "ro", "Serbia": "rs", "Hungary": "hu",
+    "Greece": "gr", "Denmark": "dk", "Finland": "fi", "Iceland": "is",
+    "Slovakia": "sk", "Slovenia": "si", "Albania": "al", "Bulgaria": "bg",
+    "Montenegro": "me", "North Macedonia": "mk", "Belarus": "by", "Moldova": "md",
+    "Georgia": "ge", "Armenia": "am", "Azerbaijan": "az", "Kazakhstan": "kz",
+    "China PR": "cn", "China": "cn", "India": "in", "Thailand": "th",
+    "Vietnam": "vn", "Indonesia": "id", "Malaysia": "my", "Philippines": "ph",
+    "Singapore": "sg", "United Arab Emirates": "ae", "Lebanon": "lb", "Syria": "sy",
+    "Israel": "il", "Palestine": "ps", "Oman": "om", "Bahrain": "bh",
+    "Kuwait": "kw", "Yemen": "ye", "Nigeria": "ng", "Cameroon": "cm",
+    "Mali": "ml", "Burkina Faso": "bf", "Guinea": "gn", "Gambia": "gm",
+    "Equatorial Guinea": "gq", "Guinea-Bissau": "gw", "Angola": "ao", "Zambia": "zm",
+    "Zimbabwe": "zw", "Tanzania": "tz", "Kenya": "ke", "Uganda": "ug",
+    "Ethiopia": "et", "Mauritania": "mr", "Sudan": "sd", "Libya": "ly",
+    "Mozambique": "mz", "Namibia": "na", "Botswana": "bw", "Madagascar": "mg",
+    "Comoros": "km", "Sierra Leone": "sl", "Liberia": "lr", "Togo": "tg",
+    "Benin": "bj", "Niger": "ne", "Chad": "td", "Central African Republic": "cf",
+    "Gabon": "ga", "Congo": "cg", "Rwanda": "rw", "Burundi": "bi",
+    "Eritrea": "er", "Somalia": "so", "Djibouti": "dj", "Cuba": "cu",
+    "Jamaica": "jm", "Trinidad and Tobago": "tt", "Honduras": "hn", "Guatemala": "gt",
+    "El Salvador": "sv", "Nicaragua": "ni", "Costa Rica": "cr", "Bolivia": "bo",
+    "Peru": "pe", "Chile": "cl", "Venezuela": "ve", "Suriname": "sr",
+    "Guyana": "gy", "Dominican Republic": "do",
+    # Extras added for full FIFA coverage
+    "Afghanistan": "af", "Bangladesh": "bd", "Bhutan": "bt", "Brunei": "bn",
+    "Cambodia": "kh", "Hong Kong": "hk", "Kyrgyzstan": "kg", "Laos": "la",
+    "Macau": "mo", "Maldives": "mv", "Mongolia": "mn", "Myanmar": "mm",
+    "Nepal": "np", "North Korea": "kp", "Pakistan": "pk", "Sri Lanka": "lk",
+    "Taiwan": "tw", "Tajikistan": "tj", "Timor-Leste": "tl", "Turkmenistan": "tm",
+    "East Timor": "tl", "Andorra": "ad", "Cyprus": "cy", "Estonia": "ee",
+    "Faroe Islands": "fo", "Gibraltar": "gi", "Greenland": "gl", "Guernsey": "gg",
+    "Isle of Man": "im", "Jersey": "je", "Kosovo": "xk", "Latvia": "lv",
+    "Liechtenstein": "li", "Lithuania": "lt", "Luxembourg": "lu", "Malta": "mt",
+    "Monaco": "mc", "Republic of Ireland": "ie", "San Marino": "sm",
+    "Vatican City": "va", "Åland Islands": "ax", "Lesotho": "ls", "Eswatini": "sz",
+    "Malawi": "mw", "Mauritius": "mu", "Réunion": "re", "Mayotte": "yt",
+    "Seychelles": "sc", "São Tomé and Príncipe": "st", "Western Sahara": "eh",
+    "South Sudan": "ss", "Bahamas": "bs", "Barbados": "bb", "Belize": "bz",
+    "Bermuda": "bm", "British Virgin Islands": "vg", "Cayman Islands": "ky",
+    "Dominica": "dm", "Grenada": "gd", "Guadeloupe": "gp", "Martinique": "mq",
+    "Montserrat": "ms", "Puerto Rico": "pr", "Saint Kitts and Nevis": "kn",
+    "Saint Lucia": "lc", "Saint Martin": "mf", "Saint Barthélemy": "bl",
+    "Saint Pierre and Miquelon": "pm", "Saint Vincent and the Grenadines": "vc",
+    "Sint Maarten": "sx", "Anguilla": "ai", "Antigua and Barbuda": "ag",
+    "Aruba": "aw", "Bonaire": "bq", "French Guiana": "gf",
+    "Turks and Caicos Islands": "tc", "American Samoa": "as", "Cook Islands": "ck",
+    "Fiji": "fj", "Guam": "gu", "Kiribati": "ki", "Marshall Islands": "mh",
+    "Micronesia": "fm", "Nauru": "nr", "New Caledonia": "nc", "Niue": "nu",
+    "Northern Mariana Islands": "mp", "Palau": "pw", "Papua New Guinea": "pg",
+    "Samoa": "ws", "Solomon Islands": "sb", "Tahiti": "pf", "Tonga": "to",
+    "Tuvalu": "tv", "Vanuatu": "vu", "Falkland Islands": "fk",
+    "United States Virgin Islands": "vi", "Saint Helena": "sh",
+    "Chagos Islands": "io",
+}
+
+# UK home nations + special-case subdivisions use flagcdn's gb-* codes (PNG only).
+ISO_SUBDIVISION: dict[str, str] = {
+    "England": "gb-eng",
+    "Scotland": "gb-sct",
+    "Wales": "gb-wls",
+    "Northern Ireland": "gb-nir",
+}
+
+
+def flag_code(team: str) -> str | None:
+    """Return the flagcdn slug for the team, or None if no real flag is available."""
+    if team in ISO_SUBDIVISION:
+        return ISO_SUBDIVISION[team]
+    return ISO_ALPHA2.get(team)
+
+
+def flag_img_html(team: str, height: int = 12) -> str:
+    """Return an `<img>` tag (flagcdn PNG) for the team, or empty if unknown.
+
+    Use this in HTML-rendered widgets (group cards, bracket) because Streamlit
+    Cloud's Linux fonts don't render Unicode regional-indicator flag emoji."""
+    code = flag_code(team)
+    if not code:
+        return ""
+    # flagcdn serves 16x12, 24x18, 32x24, 40x30, 48x36, 56x42, 64x48, 80x60 PNGs
+    sizes = {12: "16x12", 14: "20x15", 16: "24x18", 18: "24x18", 20: "32x24", 24: "32x24"}
+    size = sizes.get(height, "24x18")
+    return (f'<img src="https://flagcdn.com/{size}/{code}.png" '
+            f'class="ti-flag" alt="" loading="lazy" '
+            f'style="height:{height}px;width:auto;vertical-align:-2px;'
+            f'border-radius:2px;margin-right:5px">')

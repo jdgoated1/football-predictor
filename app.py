@@ -263,16 +263,28 @@ section[data-testid="stSidebar"] h1 {
     margin-bottom: 0.75rem;
     font-size: 0.82rem;
 }
+.group-card table.gc-table {
+    table-layout: fixed;
+}
 .group-card table.gc-table th, .group-card table.gc-table td {
-    padding: 5px 6px;
+    padding: 5px 4px;
     text-align: right;
     border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.group-card table.gc-table th { color: #94a3b8; font-weight: 600; font-size: 0.72rem;
+.group-card table.gc-table th { color: #94a3b8; font-weight: 600; font-size: 0.7rem;
     text-transform: uppercase; letter-spacing: 0.04em; }
-.group-card table.gc-table td.team-cell { text-align: left; color: #f1f5f9; font-weight: 500; }
-.group-card table.gc-table td.pos-cell { text-align: center; color: #94a3b8; width: 26px;
-    font-family: 'JetBrains Mono', monospace; }
+.group-card table.gc-table th.team-th, .group-card table.gc-table td.team-cell {
+    text-align: left; color: #f1f5f9; font-weight: 500; width: auto;
+}
+.group-card table.gc-table td.pos-cell { text-align: center; color: #94a3b8; width: 22px;
+    font-family: 'JetBrains Mono', monospace; padding-left: 0; padding-right: 2px; }
+.group-card table.gc-table th.num, .group-card table.gc-table td.num { width: 24px; }
+.group-card table.gc-table th.gfga, .group-card table.gc-table td.gfga { width: 48px; }
+.group-card table.gc-table th.gd-col, .group-card table.gc-table td.gd-col { width: 30px; }
+.group-card table.gc-table th.pts-col, .group-card table.gc-table td.pts-col { width: 30px; }
 .group-card table.gc-table td.pts-cell { font-weight: 700; color: #f8fafc;
     font-family: 'JetBrains Mono', monospace; }
 .group-card tr.adv-q td.pos-cell { color: #34d399; }
@@ -287,9 +299,14 @@ section[data-testid="stSidebar"] h1 {
     padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);
 }
 .group-card .gc-fixtures .fx:last-child { border-bottom: none; }
-.group-card .gc-fixtures .fx .fx-date { width: 56px; color: #64748b; font-size: 0.72rem; }
-.group-card .gc-fixtures .fx .fx-home  { flex: 1; text-align: right; }
-.group-card .gc-fixtures .fx .fx-away  { flex: 1; text-align: left; }
+.group-card .gc-fixtures .fx .fx-date { flex: 0 0 50px; color: #64748b; font-size: 0.7rem; }
+.group-card .gc-fixtures .fx .fx-home,
+.group-card .gc-fixtures .fx .fx-away  {
+    flex: 1 1 0; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.group-card .gc-fixtures .fx .fx-home  { text-align: right; }
+.group-card .gc-fixtures .fx .fx-away  { text-align: left; }
 .group-card .gc-fixtures .fx .fx-score {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem;
     color: #f8fafc; padding: 1px 8px; min-width: 44px; text-align: center;
@@ -718,11 +735,15 @@ def _snake_seed(teams_ranked: list[str], n_groups: int) -> list[list[str]]:
 import html as _html
 
 
-def _team_label(team: str) -> str:
-    """Short team label with a leading flag if known. HTML-escaped."""
-    from src.flags import flag as _flag
-    f = _flag(team)
-    return f"{f} {_html.escape(team)}".strip() if f else _html.escape(team)
+def _team_label(team: str, height: int = 12) -> str:
+    """Short team label with a leading flag IMG (works on Linux servers).
+
+    Falls back to plain name when no flag mapping exists. Uses flagcdn PNGs
+    rather than Unicode emojis because Streamlit Cloud's Linux fonts don't
+    render regional-indicator pairs as flag glyphs."""
+    from src.flags import flag_img_html
+    img = flag_img_html(team, height=height)
+    return f"{img}{_html.escape(team)}"
 
 
 def _stats_from_fixtures(group_teams: list[str],
@@ -789,13 +810,13 @@ def _render_group_cards(fixtures: list[dict], standings: list[list[tuple]],
                 f'<tr class="{row_class}">'
                 f'<td class="pos-cell">{pos}</td>'
                 f'<td class="team-cell">{_team_label(team)}</td>'
-                f'<td>{s["P"]}</td>'
-                f'<td>{s["W"]}</td>'
-                f'<td>{s["D"]}</td>'
-                f'<td>{s["L"]}</td>'
-                f'<td>{s["GF"]}–{s["GA"]}</td>'
-                f'<td>{(sd["gd"]):+d}</td>'
-                f'<td class="pts-cell">{sd["pts"]}</td>'
+                f'<td class="num">{s["P"]}</td>'
+                f'<td class="num">{s["W"]}</td>'
+                f'<td class="num">{s["D"]}</td>'
+                f'<td class="num">{s["L"]}</td>'
+                f'<td class="gfga">{s["GF"]}–{s["GA"]}</td>'
+                f'<td class="gd-col">{(sd["gd"]):+d}</td>'
+                f'<td class="pts-cell pts-col">{sd["pts"]}</td>'
                 f'</tr>'
             )
         # Fixtures list (sorted by date if available, else by matchday)
@@ -824,8 +845,10 @@ def _render_group_cards(fixtures: list[dict], standings: list[list[tuple]],
             f'<div class="group-card">'
             f'<div class="gc-header"><span class="gc-letter">GROUP {letter}</span></div>'
             f'<table class="gc-table">'
-            f'<thead><tr><th></th><th style="text-align:left">Team</th>'
-            f'<th>P</th><th>W</th><th>D</th><th>L</th><th>GF–GA</th><th>GD</th><th>Pts</th>'
+            f'<thead><tr><th class="pos-cell"></th><th class="team-th">Team</th>'
+            f'<th class="num">P</th><th class="num">W</th><th class="num">D</th>'
+            f'<th class="num">L</th><th class="gfga">GF–GA</th>'
+            f'<th class="gd-col">GD</th><th class="pts-col">Pts</th>'
             f'</tr></thead><tbody>{"".join(rows_html)}</tbody></table>'
             f'<div class="gc-fixtures">{"".join(fx_html)}</div>'
             f'</div>'
