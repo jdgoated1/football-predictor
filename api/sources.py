@@ -106,7 +106,7 @@ def _parse_score(value) -> tuple[int, int] | None:
     if value is None or pd.isna(value):
         return None
     s = str(value).strip()
-    if not s or "–" not in s and "-" not in s:
+    if not s or ("–" not in s and "-" not in s):
         return None
     sep = "–" if "–" in s else "-"
     parts = s.split(sep)
@@ -419,12 +419,19 @@ def team_last_lineups(team: str, league_name: str, n: int = 5,
         away = str(getattr(row, "away_team", "") or "")
         is_home = home == team
         opponent = away if is_home else home
-        side_key = "home" if data.get("home", {}).get("team") == team else "away"
-        block = data.get(side_key)
-        if not block:
-            other = data.get("away" if side_key == "home" else "home")
-            if other and other.get("team") == team:
-                block = other
+        # Skip matches where lineup data wasn't fetched (FBref hiccup, etc.) -
+        # both sides come back as None for those.
+        if not data.get("home") and not data.get("away"):
+            continue
+        home_block = data.get("home") or {}
+        away_block = data.get("away") or {}
+        if home_block.get("team") == team:
+            block = home_block
+        elif away_block.get("team") == team:
+            block = away_block
+        else:
+            # Names don't match exactly - fall back to the side from the schedule
+            block = home_block if is_home else away_block
         if not block:
             continue
         lineups_out.append({
