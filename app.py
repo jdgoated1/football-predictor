@@ -484,6 +484,11 @@ st.sidebar.caption("Calibrated model · refreshed daily")
 # full multi-scope app on a larger instance. League/Live code is untouched.
 WC_ONLY = os.environ.get("WC_ONLY", "1") != "0"
 
+# Render (and most PaaS) set this. On a hosted box we hide dev-only controls
+# like the in-app retrain button, which would OOM the 512MB instance and write
+# to an ephemeral filesystem anyway. Retraining is the daily GitHub Action's job.
+IS_HOSTED = os.environ.get("RENDER") == "true" or os.environ.get("IS_HOSTED") == "1"
+
 available_scopes = []
 for name in ["leagues", "internationals"]:
     if (ROOT / "models" / f"{name}.joblib").exists():
@@ -546,21 +551,28 @@ with st.sidebar.expander("Feedback / feature request"):
 
 st.sidebar.divider()
 
-if st.sidebar.button("Update now",
-                     help="Re-download latest match data and retrain (~30 sec)"):
-    progress = st.sidebar.empty()
-    progress.info("Updating... please wait")
-    try:
-        result = subprocess.run([sys.executable, "update.py"], cwd=str(ROOT),
-                                capture_output=True, text=True, timeout=300)
-        if result.returncode == 0:
-            progress.success("Updated. Reloading...")
-            load_bundle.clear()
-            st.rerun()
-        else:
-            progress.error(f"Update failed: {result.stderr[-300:] or result.stdout[-300:]}")
-    except subprocess.TimeoutExpired:
-        progress.error("Update timed out (>5 min)")
+# In-app retrain is a LOCAL-DEV convenience only. On the hosted box it would
+# exhaust the 512MB instance and write to an ephemeral filesystem. Hosted
+# deployments are refreshed by the daily GitHub Action (which retrains and
+# commits new models, triggering an auto-deploy).
+if IS_HOSTED:
+    st.sidebar.caption("🔄 Models refresh automatically every day.")
+else:
+    if st.sidebar.button("Update now",
+                         help="Re-download latest match data and retrain (~30 sec)"):
+        progress = st.sidebar.empty()
+        progress.info("Updating... please wait")
+        try:
+            result = subprocess.run([sys.executable, "update.py"], cwd=str(ROOT),
+                                    capture_output=True, text=True, timeout=300)
+            if result.returncode == 0:
+                progress.success("Updated. Reloading...")
+                load_bundle.clear()
+                st.rerun()
+            else:
+                progress.error(f"Update failed: {result.stderr[-300:] or result.stdout[-300:]}")
+        except subprocess.TimeoutExpired:
+            progress.error("Update timed out (>5 min)")
 
 st.sidebar.divider()
 
