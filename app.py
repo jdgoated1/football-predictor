@@ -391,10 +391,10 @@ _HERO_HTML = """
   <div class="hero-content">
     <h1>WC2026 Picks</h1>
     <p class="hero-subtitle">
-      EV-optimal predictions for your <strong style="color:#fbbf24">2026 World Cup
-      office pool</strong> — tuned to your contest's exact scoring rules.
-      Calibrated stacked ensemble (Dixon-Coles 1997, Pi-rating, gradient-boosted ML).
-      Free preview below; full tournament unlock for £7.
+      Smart score predictions for your <strong style="color:#fbbf24">2026 World Cup
+      office pool</strong> — the pick most likely to win you points, tuned to your
+      contest's scoring rules. Calibrated model (Dixon-Coles, Pi-rating, machine
+      learning). Free preview below; full tournament unlock for £7.
     </p>
     <div class="hero-stats">
       <span class="stat-pill">Calibrated ensemble</span>
@@ -973,6 +973,22 @@ def _render_paywall_teaser():
     from src.tournament import best_ev_score
     from src.wc26_strength import apply_wc_prior_to_prediction
 
+    # Post-purchase: Stripe sends buyers back here with ?session_id=... but the
+    # unlock token arrives by email (from the Worker). Reassure them so they don't
+    # think the purchase failed when they still see the paywall.
+    if st.query_params.get("session_id"):
+        st.success(
+            "✅ **Thanks for your purchase!** Your unlock link is on its way to "
+            "your email — it usually arrives within a minute (check spam if not). "
+            "Click the link in that email to open the full tournament. "
+            "You can close this tab."
+        )
+        st.caption(
+            "Didn't get it after a few minutes? Email support@wcpicks26.app and "
+            "we'll sort it out."
+        )
+        st.divider()
+
     bundle = get_bundle("internationals")
     known = set(bundle.teams)
 
@@ -985,10 +1001,11 @@ def _render_paywall_teaser():
     # Hero pitch
     st.markdown(
         "### Free preview · Matchday 1 predictions\n\n"
-        "Below: every Matchday 1 fixture with the model's probability and "
-        "EV-optimal scoreline (default 3pts exact / 1pt result scoring). "
+        "Below: every Matchday 1 fixture with the model's win probability and "
+        "its smartest score pick (the score most likely to win you points under "
+        "standard 3pts-exact / 1pt-result scoring). "
         "Unlock the full tournament — all 104 matches, knockout bracket, "
-        "Monte Carlo sim, market-prior tuning — for **£7**."
+        "champion prediction, and tournament simulator — for **£7**."
     )
 
     # Three featured matches — full match cards
@@ -1047,10 +1064,10 @@ def _render_paywall_teaser():
             Matchday 2 &amp; 3 · Knockout bracket · Champion prediction
           </h3>
           <p style="color:#cbd5e1; margin:0 0 1.3rem; line-height:1.6;">
-            Unlock the full tournament — 80 more fixtures, the bracket cascade
-            through to the Final, Monte Carlo simulator (stage % for every team),
-            EV scoring tuner for your pool's exact rules, and daily-refreshed
-            predictions throughout the tournament.
+            Unlock the full tournament — 80 more fixtures, the bracket all the
+            way to the Final, your team's chances of winning the cup (tournament
+            simulator), score picks tuned to your pool's scoring rules, and
+            predictions that refresh daily through the tournament.
           </p>
         </div>
         """,
