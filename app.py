@@ -1,6 +1,7 @@
 """Streamlit web UI for the football score predictor."""
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,8 +27,16 @@ from src.tournament import (
 from src.unlock import verify_token
 import app_api_client as api_client
 
-st.set_page_config(page_title="Football Predictor", layout="wide",
+st.set_page_config(page_title="WC2026 Picks", layout="wide",
                    page_icon=":soccer:")
+
+# Legal pages (?page=terms|privacy|refunds) render standalone and stop, so the
+# main app + paywall never run for those URLs. Must come before any heavy work.
+_legal_page = st.query_params.get("page")
+if _legal_page:
+    from src.legal import render_legal_page
+    if render_legal_page(_legal_page):
+        st.stop()
 
 # ============================================================================
 # Custom styling - dark theme, custom fonts, hero section, footer
@@ -409,13 +418,24 @@ st.markdown(_HERO_HTML, unsafe_allow_html=True)
 # ============================================================================
 # Sidebar (shared across tabs)
 # ============================================================================
-st.sidebar.markdown("# ⚽ Football Predictor")
-st.sidebar.caption("Stacked ML ensemble · daily auto-updated")
+st.sidebar.markdown("# ⚽ WC2026 Picks")
+st.sidebar.caption("Calibrated model · refreshed daily")
+
+# WC_ONLY: the launch product is World-Cup-focused. Loading both the leagues
+# and internationals ML bundles at once blows past Render's 512MB free tier
+# (each is a 3-model gradient-boosting stack). With this flag we load ONLY the
+# internationals model, hide the League/Live-data tab, and restrict the match
+# tab to national teams. Flip to False (or set env WC_ONLY=0) to restore the
+# full multi-scope app on a larger instance. League/Live code is untouched.
+WC_ONLY = os.environ.get("WC_ONLY", "1") != "0"
 
 available_scopes = []
 for name in ["leagues", "internationals"]:
     if (ROOT / "models" / f"{name}.joblib").exists():
         available_scopes.append(name)
+
+if WC_ONLY:
+    available_scopes = [s for s in available_scopes if s == "internationals"]
 
 if not available_scopes:
     st.error("No trained models found. Run `python train.py` first.")
@@ -524,27 +544,40 @@ def _stripe_payment_link() -> str:
 # ============================================================================
 # Tabs
 # ============================================================================
-tab_cup, tab_match, tab_more = st.tabs(
-    ["🏆 WC2026 Bracket", "Quick match check", "More ▾"])
+if WC_ONLY:
+    # Only the WC tournament + a national-team match checker. The League/Live
+    # tab is hidden so the leagues ML model never loads (keeps us under 512MB).
+    tab_cup, tab_match = st.tabs(["🏆 WC2026 Bracket", "Quick match check"])
+    tab_more = None
+else:
+    tab_cup, tab_match, tab_more = st.tabs(
+        ["🏆 WC2026 Bracket", "Quick match check", "More ▾"])
 
 
 # ----------------------------------------------------------------------------
 # TAB 1: single match
 # ----------------------------------------------------------------------------
 def render_match():
-    scope = st.radio("Scope", available_scopes, format_func=str.title, horizontal=True,
-                     key="match_scope")
+    # With a single scope (WC-only launch) the radio is redundant — skip it.
+    if len(available_scopes) == 1:
+        scope = available_scopes[0]
+    else:
+        scope = st.radio("Scope", available_scopes, format_func=str.title,
+                         horizontal=True, key="match_scope")
     bundle = get_bundle(scope)
     teams = sorted(bundle.teams)
 
     # Format team names with flag emojis (for internationals; clubs unchanged)
     fmt_team = (lambda t: flagged(t)) if scope == "internationals" else (lambda t: t)
+    # Sensible defaults per scope so the page opens on a recognisable matchup.
+    default_home = "England" if scope == "internationals" else "Arsenal"
+    default_away_name = "France" if scope == "internationals" else "Liverpool"
     c1, c2, c3, c4 = st.columns([3, 3, 2, 2])
     home = c1.selectbox("Home team", teams,
-                        index=teams.index("Arsenal") if "Arsenal" in teams else 0,
+                        index=teams.index(default_home) if default_home in teams else 0,
                         key="m_home", format_func=fmt_team)
     away_options = [t for t in teams if t != home]
-    default_away = "Liverpool" if "Liverpool" in away_options else away_options[0]
+    default_away = default_away_name if default_away_name in away_options else away_options[0]
     away = c2.selectbox("Away team", away_options,
                         index=away_options.index(default_away), key="m_away",
                         format_func=fmt_team)
@@ -1630,12 +1663,13 @@ with tab_cup:
 with tab_match:
     render_match()
 
-with tab_more:
-    sub_league, sub_data = st.tabs(["League season", "Live data"])
-    with sub_league:
-        render_league()
-    with sub_data:
-        render_data()
+if tab_more is not None:
+    with tab_more:
+        sub_league, sub_data = st.tabs(["League season", "Live data"])
+        with sub_league:
+            render_league()
+        with sub_data:
+            render_data()
 
 
 # ============================================================================
@@ -1643,16 +1677,22 @@ with tab_more:
 # ============================================================================
 _FOOTER_HTML = """
 <div class="custom-footer">
-  <div>
-    Built with <a href="https://streamlit.io" target="_blank">Streamlit</a> ·
-    Models: Elo + Pi-rating + Dixon-Coles + (XGBoost + LightGBM + CatBoost)
-    ensemble with isotonic-calibrated meta-learner
+  <div style="margin-bottom: 0.6rem;">
+    <a href="?page=terms" target="_blank">Terms</a> ·
+    <a href="?page=privacy" target="_blank">Privacy</a> ·
+    <a href="?page=refunds" target="_blank">Refunds</a> ·
+    <a href="mailto:support@wcpicks26.app">Contact</a>
   </div>
   <div>
+    A statistical forecasting tool for prediction contests — not a betting
+    service, not financial advice. Predictions are algorithmic and not
+    guaranteed; past accuracy is no guarantee of future results.
+  </div>
+  <div style="margin-top: 0.6rem;">
+    Model: calibrated Elo + Pi-rating + Dixon-Coles + gradient-boosted ensemble ·
     Data: <a href="https://www.football-data.co.uk" target="_blank">football-data.co.uk</a> ·
-    <a href="https://github.com/martj42/international_results" target="_blank">martj42/international_results</a> ·
-    <a href="https://understat.com" target="_blank">Understat</a> ·
-    public bookmakers
+    <a href="https://github.com/martj42/international_results" target="_blank">martj42</a> ·
+    <a href="https://understat.com" target="_blank">Understat</a>
   </div>
   <div style="margin-top: 0.8rem;">
     <a href="https://github.com/jdgoated1/football-predictor" target="_blank">
