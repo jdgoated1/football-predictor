@@ -541,6 +541,33 @@ def _stripe_payment_link() -> str:
     return val or "#"
 
 
+def _app_base_url() -> str:
+    """Base URL for building absolute in-app links (Streamlit's LinkColumn
+    needs absolute URLs). Override with APP_BASE_URL env var for local dev."""
+    return os.environ.get("APP_BASE_URL", "https://wcpicks26.app").rstrip("/")
+
+
+def _current_token() -> str:
+    """The unlock token from the current URL, if any. Navigating to a new URL
+    starts a fresh Streamlit session (session_state is lost), so we must carry
+    the token through every in-app link to keep paid users unlocked."""
+    return st.query_params.get("token", "") or ""
+
+
+def _match_url(home: str, away: str) -> str:
+    """Absolute URL that opens the full analytics for a fixture, preserving the
+    unlock token so paid users stay unlocked after clicking."""
+    tok = _current_token()
+    prefix = f"token={tok}&" if tok else ""
+    return f"{_app_base_url()}/?{prefix}match={home}|{away}"
+
+
+def _home_url() -> str:
+    """Absolute URL back to the main app, preserving the unlock token."""
+    tok = _current_token()
+    return f"{_app_base_url()}/?token={tok}" if tok else f"{_app_base_url()}/"
+
+
 # ============================================================================
 # Tabs
 # ============================================================================
@@ -1071,8 +1098,10 @@ def _render_paywall_teaser():
                     f"xG {pred['lambda_home']:.1f}–{pred['lambda_away']:.1f}"
                 )
 
-    # Full MD1 table
+    # Full MD1 table — each row links to its full analytics (free for MD1)
     st.markdown("#### All 24 Matchday 1 fixtures")
+    st.caption("👉 Click **Analyse** on any row for the full breakdown — "
+               "probabilities, top scorelines, and the scoreline heatmap.")
     rows = []
     for (date, h, a) in md1:
         pred = bundle.predict(h, a, neutral=True)
@@ -1086,8 +1115,15 @@ def _render_paywall_teaser():
             "H %":    f"{pred['outcome']['H']*100:.0f}%",
             "D %":    f"{pred['outcome']['D']*100:.0f}%",
             "A %":    f"{pred['outcome']['A']*100:.0f}%",
+            "Analyse": _match_url(h, a),
         })
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(
+        pd.DataFrame(rows), hide_index=True, use_container_width=True,
+        column_config={
+            "Analyse": st.column_config.LinkColumn(
+                "Analyse", display_text="🔍 Analyse", width="small")
+        },
+    )
 
     # Locked content notice + Stripe CTA
     st.divider()
@@ -1138,12 +1174,111 @@ def _render_paywall_teaser():
         )
 
 
+def _free_md1_pairs() -> set[tuple[str, str]]:
+    """The 24 Matchday-1 (home, away) pairs that are free to analyse without
+    unlocking. Mirrors the teaser's free preview set."""
+    from src.schedules import WC_2026_GROUP_FIXTURES
+    from src.real_groups import ALIASES
+    out = set()
+    for date, h, a in WC_2026_GROUP_FIXTURES[:24]:
+        out.add((ALIASES.get(h, h), ALIASES.get(a, a)))
+    return out
+
+
+def _render_match_detail(home: str, away: str, wc_blend: float = 0.30) -> None:
+    """Full single-match analytics for a WC fixture: outcome probabilities,
+    most-likely scorelines, and the scoreline heatmap. Reached by clicking a
+    fixture (?match=Home|Away). Neutral venue + WC squad-strength prior, to
+    match how the tournament predictions are generated."""
+    from src.tournament import best_ev_score
+    from src.wc26_strength import apply_wc_prior_to_prediction
+
+    bundle = get_bundle("internationals")
+    known = set(bundle.teams)
+    back_url = _home_url()
+    if home not in known or away not in known:
+        st.error(f"Unknown match: {home} vs {away}.")
+        st.markdown(f"[← Back to the tournament]({back_url})")
+        return
+
+    st.markdown(f"[← Back to the tournament]({back_url})")
+    pred = bundle.predict(home, away, neutral=True)
+    pred = apply_wc_prior_to_prediction(pred, home, away, blend=wc_blend)
+    hg, ag, _, _ = best_ev_score(pred)
+
+    st.markdown(f"## {flagged(home)}  vs  {flagged(away)}")
+    st.caption("Neutral venue · blended with current squad-strength prior. "
+               "World Cup 2026 group stage.")
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric(f"{home} win", f"{pred['outcome']['H']*100:.1f}%")
+    k2.metric("Draw", f"{pred['outcome']['D']*100:.1f}%")
+    k3.metric(f"{away} win", f"{pred['outcome']['A']*100:.1f}%")
+    k4.metric("Smartest score pick", f"{hg} – {ag}")
+    k5.metric("Expected goals", f"{pred['lambda_home']:.2f} – {pred['lambda_away']:.2f}")
+
+    st.divider()
+    col_bar, col_top = st.columns(2)
+    with col_bar:
+        st.subheader("Outcome probabilities")
+        odf = pd.DataFrame([
+            {"Result": f"{home} win", "p": pred["outcome"]["H"]},
+            {"Result": "Draw", "p": pred["outcome"]["D"]},
+            {"Result": f"{away} win", "p": pred["outcome"]["A"]},
+        ])
+        fig = px.bar(odf, x="Result", y="p", color="Result",
+                     text=odf["p"].map(lambda v: f"{v*100:.1f}%"),
+                     color_discrete_sequence=["#10b981", "#94a3b8", "#fbbf24"])
+        fig.update_layout(yaxis_tickformat=".0%", yaxis_title="Probability",
+                          height=360, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+    with col_top:
+        st.subheader("Most likely scorelines")
+        top_df = pd.DataFrame([
+            {"Score": f"{h}-{a}", "p": p, "Probability": f"{p*100:.1f}%"}
+            for (h, a, p) in pred["top_scores"]
+        ])
+        fig2 = px.bar(top_df, x="Score", y="p", text="Probability", color="p",
+                      color_continuous_scale="Greens")
+        fig2.update_layout(yaxis_tickformat=".0%", yaxis_title="Probability",
+                           height=360, showlegend=False, coloraxis_showscale=False)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.subheader("Full scoreline distribution")
+    sm = pred["score_matrix"]
+    n = min(7, sm.shape[0])
+    heat = sm[:n, :n]
+    hm = go.Figure(data=go.Heatmap(
+        z=heat * 100,
+        x=[str(i) for i in range(n)], y=[str(i) for i in range(n)],
+        text=[[f"{heat[i, j]*100:.1f}%" for j in range(n)] for i in range(n)],
+        texttemplate="%{text}", colorscale="Greens", colorbar=dict(title="%"),
+    ))
+    hm.update_layout(xaxis_title=f"{away} goals", yaxis_title=f"{home} goals",
+                     yaxis_autorange="reversed", height=460)
+    st.plotly_chart(hm, use_container_width=True)
+    st.markdown(f"[← Back to the tournament]({back_url})")
+
+
 def render_tournament():
     if "internationals" not in available_scopes:
         st.warning("Internationals model not available.")
         return
 
-    if not _is_unlocked():
+    unlocked = _is_unlocked()
+
+    # Clicking a fixture sets ?match=Home|Away. Free users can drill into the 24
+    # Matchday-1 games; paid users into any fixture. Anything else → paywall.
+    match_param = st.query_params.get("match")
+    if match_param and "|" in match_param:
+        home, away = (s.strip() for s in match_param.split("|", 1))
+        if unlocked or (home, away) in _free_md1_pairs():
+            _render_match_detail(home, away)
+            return
+        _render_paywall_teaser()
+        return
+
+    if not unlocked:
         _render_paywall_teaser()
         return
 
@@ -1436,8 +1571,15 @@ def render_tournament():
                             row["xG"]  = f"{f['xg_home']:.2f}–{f['xg_away']:.2f}"
                         if f.get("alt_scores"):
                             row["Alt scores"] = f["alt_scores"]
+                        row["Analyse"] = _match_url(f["home"], f["away"])
                         rows.append(row)
-                    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                    st.dataframe(
+                        pd.DataFrame(rows), hide_index=True, use_container_width=True,
+                        column_config={
+                            "Analyse": st.column_config.LinkColumn(
+                                "Analyse", display_text="🔍", width="small")
+                        },
+                    )
                     st.caption("Final standings:")
                     srows = [{"Pos": i + 1, "Team": flagged(t), "Pts": s["pts"],
                               "GD": s["gd"], "GF": s["gf"]}
