@@ -50,7 +50,7 @@ html, body, [class*="css"], .stApp, .stMarkdown, p, label, div {
 }
 
 .stApp {
-    background: radial-gradient(ellipse at top, #131c2e 0%, #0a0e1a 50%) !important;
+    background: radial-gradient(ellipse at top, #16203a 0%, #11151c 55%) !important;
 }
 
 h1, h2, h3, h4, h5 {
@@ -61,11 +61,11 @@ h1, h2, h3, h4, h5 {
 
 /* ----- Hero ----- */
 .hero {
-    background: linear-gradient(135deg, #0e2a3f 0%, #0d4d3a 100%);
+    background: linear-gradient(135deg, #11224a 0%, #3a1020 100%);
     border-radius: 20px;
     padding: 2.2rem 2.5rem;
     margin: 0 0 2rem 0;
-    border: 1px solid rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(37, 99, 235, 0.18);
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
@@ -77,7 +77,7 @@ h1, h2, h3, h4, h5 {
     right: -10%;
     width: 380px;
     height: 380px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, transparent 65%);
     pointer-events: none;
 }
 .hero::after {
@@ -87,7 +87,7 @@ h1, h2, h3, h4, h5 {
     left: -10%;
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.10) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(225, 29, 72, 0.14) 0%, transparent 65%);
     pointer-events: none;
 }
 .hero-content { position: relative; z-index: 2; }
@@ -95,7 +95,7 @@ h1, h2, h3, h4, h5 {
     font-size: 2.6rem !important;
     font-weight: 800 !important;
     margin: 0 0 0.4rem 0 !important;
-    background: linear-gradient(95deg, #34d399 0%, #fbbf24 90%);
+    background: linear-gradient(95deg, #3b82f6 0%, #e11d48 52%, #f59e0b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -110,9 +110,9 @@ h1, h2, h3, h4, h5 {
 }
 .hero-stats { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .stat-pill {
-    background: rgba(16, 185, 129, 0.10);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #34d399;
+    background: rgba(37, 99, 235, 0.10);
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    color: #3b82f6;
     padding: 0.38rem 0.95rem;
     border-radius: 100px;
     font-size: 0.82rem;
@@ -120,10 +120,54 @@ h1, h2, h3, h4, h5 {
     letter-spacing: 0.01em;
 }
 .stat-pill.gold {
-    background: rgba(251, 191, 36, 0.08);
-    border-color: rgba(251, 191, 36, 0.3);
-    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
 }
+.stat-pill.red {
+    background: rgba(225, 29, 72, 0.10);
+    border-color: rgba(225, 29, 72, 0.35);
+    color: #fb7185;
+}
+
+/* ----- Animated probability bars (match detail) ----- */
+.prob-wrap { margin: 0.4rem 0 1.1rem; }
+.prob-row {
+    display: flex; align-items: center; gap: 0.6rem; margin: 0.45rem 0;
+}
+.prob-label {
+    flex: 0 0 132px; font-weight: 600; color: #e2e8f0; font-size: 0.9rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prob-track {
+    flex: 1; height: 26px; background: rgba(255,255,255,0.05);
+    border-radius: 7px; overflow: hidden; position: relative;
+}
+.prob-fill {
+    height: 100%; border-radius: 7px; width: 0;
+    animation: probGrow 0.9s cubic-bezier(.2,.8,.2,1) forwards;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px; color: #fff; font-weight: 700; font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+.prob-fill.h { background: linear-gradient(90deg, #1d4ed8, #3b82f6); }
+.prob-fill.d { background: linear-gradient(90deg, #475569, #94a3b8); }
+.prob-fill.a { background: linear-gradient(90deg, #be123c, #fb7185); }
+@keyframes probGrow { from { width: 0; } to { width: var(--pct); } }
+
+/* ----- Team hover cards ----- */
+.team-hc { position: relative; cursor: default; border-bottom: 1px dotted rgba(255,255,255,0.25); }
+.team-hc .hc-pop {
+    visibility: hidden; opacity: 0; transition: opacity 0.15s ease;
+    position: absolute; bottom: 130%; left: 0; z-index: 50;
+    background: #0f1626; border: 1px solid rgba(37,99,235,0.4);
+    border-radius: 9px; padding: 0.55rem 0.7rem; min-width: 150px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45); font-size: 0.74rem;
+    color: #cbd5e1; font-weight: 500; line-height: 1.5; white-space: nowrap;
+}
+.team-hc .hc-pop b { color: #f8fafc; }
+.team-hc .hc-pop .hc-gold { color: #f59e0b; }
+.team-hc:hover .hc-pop { visibility: visible; opacity: 1; }
 
 /* ----- Metric cards ----- */
 [data-testid="stMetric"], [data-testid="metric-container"] {
@@ -134,7 +178,7 @@ h1, h2, h3, h4, h5 {
     transition: border-color 0.2s ease;
 }
 [data-testid="stMetric"]:hover, [data-testid="metric-container"]:hover {
-    border-color: rgba(16, 185, 129, 0.3);
+    border-color: rgba(37, 99, 235, 0.3);
 }
 [data-testid="stMetricValue"] {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -159,12 +203,12 @@ h1, h2, h3, h4, h5 {
 }
 .stButton > button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.22);
-    border-color: rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+    border-color: rgba(37, 99, 235, 0.4) !important;
 }
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    border-color: rgba(16, 185, 129, 0.55) !important;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border-color: rgba(37, 99, 235, 0.55) !important;
 }
 
 /* ----- Tabs ----- */
@@ -179,18 +223,18 @@ h1, h2, h3, h4, h5 {
     background: transparent !important;
 }
 .stTabs [aria-selected="true"] {
-    background: rgba(16, 185, 129, 0.1) !important;
-    color: #34d399 !important;
+    background: rgba(37, 99, 235, 0.1) !important;
+    color: #3b82f6 !important;
 }
 
 /* ----- Sidebar ----- */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0d121e 0%, #0a0e1a 100%) !important;
+    background: linear-gradient(180deg, #10141d 0%, #11151c 100%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 section[data-testid="stSidebar"] h1 {
     font-size: 1.5rem !important;
-    background: linear-gradient(95deg, #34d399 0%, #fbbf24 90%);
+    background: linear-gradient(95deg, #3b82f6 0%, #f59e0b 90%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -232,7 +276,7 @@ section[data-testid="stSidebar"] h1 {
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     line-height: 1.7;
 }
-.custom-footer a { color: #34d399; text-decoration: none; font-weight: 500; }
+.custom-footer a { color: #3b82f6; text-decoration: none; font-weight: 500; }
 .custom-footer a:hover { text-decoration: underline; }
 
 /* ----- Hide default chrome ----- */
@@ -244,12 +288,18 @@ section[data-testid="stSidebar"] h1 {
 
 /* ----- Group stage cards ----- */
 .group-card {
-    background: linear-gradient(180deg, rgba(19,24,37,0.85) 0%, rgba(13,18,30,0.95) 100%);
+    background: linear-gradient(180deg, rgba(26,32,48,0.88) 0%, rgba(16,20,29,0.96) 100%);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 14px;
     padding: 0.9rem 1rem 1rem;
     margin-bottom: 1.2rem;
     box-shadow: 0 2px 14px rgba(0,0,0,0.18);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.group-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(37,99,235,0.18);
+    border-color: rgba(37,99,235,0.35);
 }
 .group-card .gc-header {
     display: flex;
@@ -262,7 +312,7 @@ section[data-testid="stSidebar"] h1 {
 .group-card .gc-letter {
     font-weight: 800;
     font-size: 1.05rem;
-    background: linear-gradient(95deg, #34d399 0%, #fbbf24 90%);
+    background: linear-gradient(95deg, #3b82f6 0%, #f59e0b 90%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -298,10 +348,10 @@ section[data-testid="stSidebar"] h1 {
 .group-card table.gc-table th.pts-col, .group-card table.gc-table td.pts-col { width: 30px; }
 .group-card table.gc-table td.pts-cell { font-weight: 700; color: #f8fafc;
     font-family: 'JetBrains Mono', monospace; }
-.group-card tr.adv-q td.pos-cell { color: #34d399; }
+.group-card tr.adv-q td.pos-cell { color: #3b82f6; }
 .group-card tr.adv-q td.pos-cell::before { content: ""; display: inline-block; width: 3px;
-    height: 14px; background: #10b981; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
-.group-card tr.adv-t td.pos-cell { color: #fbbf24; }
+    height: 14px; background: #2563eb; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.group-card tr.adv-t td.pos-cell { color: #f59e0b; }
 .group-card tr.adv-t td.pos-cell::before { content: ""; display: inline-block; width: 3px;
     height: 14px; background: #f59e0b; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 .group-card .gc-fixtures { font-size: 0.78rem; color: #cbd5e1; }
@@ -323,8 +373,8 @@ section[data-testid="stSidebar"] h1 {
     color: #f8fafc; padding: 1px 8px; min-width: 44px; text-align: center;
     background: rgba(255,255,255,0.04); border-radius: 5px;
 }
-.group-card .gc-fixtures .fx.played .fx-score { background: rgba(16,185,129,0.18);
-    color: #34d399; }
+.group-card .gc-fixtures .fx.played .fx-score { background: rgba(37,99,235,0.18);
+    color: #3b82f6; }
 
 /* ----- Knockout bracket ----- */
 .bracket-wrap {
@@ -340,15 +390,20 @@ section[data-testid="stSidebar"] h1 {
     text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem;
 }
 .bracket-match {
-    background: linear-gradient(180deg, rgba(19,24,37,0.85) 0%, rgba(13,18,30,0.95) 100%);
+    background: linear-gradient(180deg, rgba(26,32,48,0.88) 0%, rgba(16,20,29,0.96) 100%);
     border: 1px solid rgba(255,255,255,0.07);
-    border-left: 3px solid rgba(16,185,129,0.5);
+    border-left: 3px solid rgba(37,99,235,0.5);
     border-radius: 8px;
     padding: 0.45rem 0.6rem;
     font-size: 0.8rem;
     box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.bracket-match.pens { border-left-color: rgba(251,191,36,0.7); }
+.bracket-match:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 18px rgba(37,99,235,0.25);
+}
+.bracket-match.pens { border-left-color: rgba(245,158,11,0.7); }
 .bracket-match.played { border-left-color: rgba(34,211,238,0.7); }
 .bracket-match .bm-side {
     display: flex; justify-content: space-between; align-items: center;
@@ -364,22 +419,22 @@ section[data-testid="stSidebar"] h1 {
     font-family: 'JetBrains Mono', monospace; font-weight: 700;
     min-width: 20px; text-align: right;
 }
-.bracket-match .bm-side.winner .gs { color: #34d399; }
+.bracket-match .bm-side.winner .gs { color: #3b82f6; }
 .bracket-match .bm-side.loser  .gs { color: #64748b; }
 .bracket-match .bm-meta {
     margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.05);
     font-size: 0.66rem; color: #94a3b8; text-align: center; letter-spacing: 0.04em;
 }
 .bracket-champion {
-    background: linear-gradient(135deg, #14532d 0%, #422006 100%);
-    border: 1px solid rgba(251,191,36,0.5);
+    background: linear-gradient(135deg, #7f1d1d 0%, #422006 100%);
+    border: 1px solid rgba(245,158,11,0.5);
     border-radius: 12px;
     padding: 1rem;
     text-align: center;
     font-weight: 700;
     margin-top: 1rem;
 }
-.bracket-champion .ch-label { color: #fbbf24; text-transform: uppercase;
+.bracket-champion .ch-label { color: #f59e0b; text-transform: uppercase;
     letter-spacing: 0.1em; font-size: 0.7rem; }
 .bracket-champion .ch-team { color: #fef3c7; font-size: 1.3rem; margin-top: 0.3rem; }
 
@@ -400,14 +455,14 @@ _HERO_HTML = """
   <div class="hero-content">
     <h1>WC2026 Picks</h1>
     <p class="hero-subtitle">
-      Smart score predictions for your <strong style="color:#fbbf24">2026 World Cup
+      Smart score predictions for your <strong style="color:#f59e0b">2026 World Cup
       office pool</strong> — the pick most likely to win you points, tuned to your
       contest's scoring rules. Calibrated model (Dixon-Coles, Pi-rating, machine
       learning). Free preview below; full tournament unlock for £7.
     </p>
     <div class="hero-stats">
-      <span class="stat-pill">Calibrated ensemble</span>
-      <span class="stat-pill">RPS 0.173 — bookmaker-level</span>
+      <span class="stat-pill">Calibrated model</span>
+      <span class="stat-pill red">RPS 0.173 — bookmaker-level</span>
       <span class="stat-pill gold">WC 2026 ready</span>
     </div>
   </div>
@@ -835,8 +890,22 @@ def _team_label(team: str, height: int = 12) -> str:
     rather than Unicode emojis because Streamlit Cloud's Linux fonts don't
     render regional-indicator pairs as flag glyphs."""
     from src.flags import flag_img_html
+    from src.wc26_strength import WC_2026_DATA
     img = flag_img_html(team, height=height)
-    return f"{img}{_html.escape(team)}"
+    name = _html.escape(team)
+    data = WC_2026_DATA.get(team)
+    if data:
+        bits = []
+        if data.get("rank") is not None:
+            bits.append(f"squad rank #{data['rank']}")
+        if data.get("odds") is not None:
+            bits.append(f"{data['odds']:g} to win outright")
+        if data.get("value_m") is not None:
+            bits.append(f"€{data['value_m']}m squad value")
+        if bits:
+            tip = _html.escape(f"{team} — " + " · ".join(bits))
+            return f'<span class="team-hc" title="{tip}">{img}{name}</span>'
+    return f"{img}{name}"
 
 
 def _stats_from_fixtures(group_teams: list[str],
@@ -959,9 +1028,9 @@ def _render_group_cards(fixtures: list[dict], standings: list[list[tuple]],
 
     # Legend
     legend_parts = []
-    legend_parts.append('<span style="color:#34d399">▌</span> Advances')
+    legend_parts.append('<span style="color:#3b82f6">▌</span> Advances')
     if fmt.best_thirds > 0:
-        legend_parts.append('<span style="color:#fbbf24">▌</span> Best 3rd-place')
+        legend_parts.append('<span style="color:#f59e0b">▌</span> Best 3rd-place')
     st.markdown(
         f'<div style="color:#94a3b8;font-size:0.78rem;margin-top:0.2rem">'
         f'{" &nbsp; ".join(legend_parts)}</div>',
@@ -1074,6 +1143,7 @@ def _render_paywall_teaser():
     )
 
     # Three featured matches — full match cards
+    from src.flags import flag_img_html
     featured_pairs = [
         ("England", "Croatia"),
         ("Brazil", "Morocco"),
@@ -1088,7 +1158,11 @@ def _render_paywall_teaser():
             pred = apply_wc_prior_to_prediction(pred, h, a, blend=0.30)
             hg, ag, _, _ = best_ev_score(pred)
             with col:
-                st.markdown(f"**{flagged(h)}** vs **{flagged(a)}**")
+                st.markdown(
+                    f"{flag_img_html(h, 16)} <b>{_html.escape(h)}</b> "
+                    f"<span style='opacity:0.6'>vs</span> "
+                    f"{flag_img_html(a, 16)} <b>{_html.escape(a)}</b>",
+                    unsafe_allow_html=True)
                 k1, k2 = st.columns(2)
                 k1.metric("Predicted", f"{hg}–{ag}")
                 k2.metric(f"{h[:6]} win", f"{pred['outcome']['H']*100:.0f}%")
@@ -1129,10 +1203,10 @@ def _render_paywall_teaser():
     st.divider()
     st.markdown(
         """
-        <div style="background:linear-gradient(135deg,#0e2a3f 0%, #0d4d3a 100%);
-                    border:1px solid rgba(16,185,129,0.35); border-radius:16px;
+        <div style="background:linear-gradient(135deg,#11224a 0%, #3a1020 100%);
+                    border:1px solid rgba(37,99,235,0.35); border-radius:16px;
                     padding:1.8rem 2rem; text-align:center; margin: 1rem 0;">
-          <div style="font-size:0.85rem; color:#fbbf24; letter-spacing:0.1em;
+          <div style="font-size:0.85rem; color:#f59e0b; letter-spacing:0.1em;
                       text-transform:uppercase; font-weight:700;">🔒 Locked</div>
           <h3 style="margin:0.5rem 0 0.8rem; color:#f8fafc;">
             Matchday 2 &amp; 3 · Knockout bracket · Champion prediction
@@ -1160,10 +1234,10 @@ def _render_paywall_teaser():
         else:
             st.markdown(
                 f'<a href="{pay_link}" target="_blank" style="text-decoration:none;">'
-                f'<div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);'
+                f'<div style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);'
                 f'color:white; padding:1rem 2rem; border-radius:12px; font-weight:700;'
                 f'font-size:1.15rem; text-align:center; cursor:pointer;'
-                f'box-shadow:0 6px 18px rgba(16,185,129,0.4);">'
+                f'box-shadow:0 6px 18px rgba(37,99,235,0.4);">'
                 f'Unlock full tournament — £7'
                 f'</div></a>',
                 unsafe_allow_html=True,
@@ -1206,7 +1280,12 @@ def _render_match_detail(home: str, away: str, wc_blend: float = 0.30) -> None:
     pred = apply_wc_prior_to_prediction(pred, home, away, blend=wc_blend)
     hg, ag, _, _ = best_ev_score(pred)
 
-    st.markdown(f"## {flagged(home)}  vs  {flagged(away)}")
+    from src.flags import flag_img_html
+    st.markdown(
+        f"<h2>{flag_img_html(home, 26)} {_html.escape(home)} "
+        f"<span style='opacity:0.5;font-weight:500'>vs</span> "
+        f"{flag_img_html(away, 26)} {_html.escape(away)}</h2>",
+        unsafe_allow_html=True)
     st.caption("Neutral venue · blended with current squad-strength prior. "
                "World Cup 2026 group stage.")
 
@@ -1221,17 +1300,22 @@ def _render_match_detail(home: str, away: str, wc_blend: float = 0.30) -> None:
     col_bar, col_top = st.columns(2)
     with col_bar:
         st.subheader("Outcome probabilities")
-        odf = pd.DataFrame([
-            {"Result": f"{home} win", "p": pred["outcome"]["H"]},
-            {"Result": "Draw", "p": pred["outcome"]["D"]},
-            {"Result": f"{away} win", "p": pred["outcome"]["A"]},
-        ])
-        fig = px.bar(odf, x="Result", y="p", color="Result",
-                     text=odf["p"].map(lambda v: f"{v*100:.1f}%"),
-                     color_discrete_sequence=["#10b981", "#94a3b8", "#fbbf24"])
-        fig.update_layout(yaxis_tickformat=".0%", yaxis_title="Probability",
-                          height=360, showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+        ph, pd_, pa = pred["outcome"]["H"], pred["outcome"]["D"], pred["outcome"]["A"]
+        bars = [
+            ("h", f"{home} win", ph),
+            ("d", "Draw", pd_),
+            ("a", f"{away} win", pa),
+        ]
+        rows_html = "".join(
+            f'<div class="prob-row">'
+            f'<div class="prob-label">{_html.escape(lbl)}</div>'
+            f'<div class="prob-track"><div class="prob-fill {cls}" '
+            f'style="--pct:{p*100:.1f}%">{p*100:.0f}%</div></div>'
+            f'</div>'
+            for cls, lbl, p in bars
+        )
+        st.markdown(f'<div class="prob-wrap">{rows_html}</div>',
+                    unsafe_allow_html=True)
     with col_top:
         st.subheader("Most likely scorelines")
         top_df = pd.DataFrame([
@@ -1239,7 +1323,7 @@ def _render_match_detail(home: str, away: str, wc_blend: float = 0.30) -> None:
             for (h, a, p) in pred["top_scores"]
         ])
         fig2 = px.bar(top_df, x="Score", y="p", text="Probability", color="p",
-                      color_continuous_scale="Greens")
+                      color_continuous_scale="Blues")
         fig2.update_layout(yaxis_tickformat=".0%", yaxis_title="Probability",
                            height=360, showlegend=False, coloraxis_showscale=False)
         st.plotly_chart(fig2, use_container_width=True)
